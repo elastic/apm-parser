@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import apmParser from './index';
 
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const { Environment } = require('./ApmClient');
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers"
+import { Environment } from './ApmClient'
 
 const argv = yargs(hideBin(process.argv))
   .scriptName('apm-parser')
@@ -56,6 +56,13 @@ const argv = yargs(hideBin(process.argv))
       default: Environment.ENVIRONMENT_ALL,
       type: 'string',
     },
+    tt: {
+      alias: 'transactionType',
+      demandOption: false,
+      describe: 'Transaction Type',
+      default: ['request'],
+      type: 'array',
+    },
     d: {
       alias: 'dir',
       demandOption: false,
@@ -63,25 +70,21 @@ const argv = yargs(hideBin(process.argv))
       default: 'artifacts',
       type: 'string',
     },
+    t: {
+      alias: 'type',
+      describe: 'Output type (scalability, esperf)',
+      default: 'scalability',
+      type: 'string'
+    }
   })
   .help('h')
   .alias('h', 'help').argv;
 
 apmParser({
-  dir: argv.dir,
-  param: {
-    start: argv.start,
-    end: argv.end,
-    kuery: argv.kuery,
-    environment: argv.env,
-  },
-  client: {
-    auth: {
-      username: argv.user,
-      password: argv.pwd,
-    },
-    baseURL: argv.cluster,
-  },
+  dir: argv.d,
+  type: argv.t,
+  param: { start: argv.s, end: argv.e, kuery: argv.k, environment: argv.n, transactionType: argv.tt },
+  client: { auth: { username: argv.u, password: argv.p }, baseURL: argv.c },
 })
-  .then((_) => console.log('Apm parser finished successfully'))
+  .then(() => console.log('Apm parser finished successfully'))
   .catch((e) => console.error('Apm parser failed\n', e));

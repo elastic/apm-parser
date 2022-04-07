@@ -1,15 +1,21 @@
+// @ts-nocheck
 import { writeFile } from 'fs/promises';
-
+import bluebird from 'bluebird';
+import { Events } from './types';
 import tree from './tree';
-import { ApmClient, Environment, TracesResponse } from './ApmClient';
+import { ApmClient, Environment } from './ApmClient';
+import _ from 'lodash';
+import * as sanitize from "./sanitize";
 
 type CLIParams = {
   dir: string;
+  type: string;
   param: {
     start: string;
     end: string;
     environment: Environment;
     kuery: string;
+    transactionType: string[];
   };
   client: {
     auth: {
@@ -20,32 +26,71 @@ type CLIParams = {
   };
 };
 
-type TraceItem = TracesResponse['items'][0];
-
-const enrichTrace = async (traceItem: TraceItem, api: ApmClient, params: CLIParams['param']) => {
-  const { serviceName, transactionType, transactionName } = traceItem;
-
+const enrichTrace = async (transactionName: string, transactionType: string, service: string, api: ApmClient, params: Omit<CLIParams['param'], 'transactionType'>) => {
   const traceSamples = await api.getTraceSamples({
-    service: serviceName,
-    transactionType,
-    transactionName,
     ...params,
+    transactionName,
+    transactionType,
+    service,
   });
 
-  const trace = await api.getTrace({ id: traceSamples[0].traceId, start: params.start, end: params.end });
-  traceItem['root'] = tree(trace.traceDocs);
+  const uniqueTraceSamples = _.uniqBy(traceSamples, 'traceId')
 
-  return traceItem;
+  const traces = await bluebird.map<_, Events[]>(uniqueTraceSamples, ({ traceId }) => api.getTrace({
+    id: traceId,
+    start: params.start,
+    end: params.end
+  }), { concurrency: 10 });
+
+
+  const rawTraces = traces.map(events => tree(events.map(sanitize.scalability))).filter(e => !_.isEmpty(e))
+
+  return {
+    service,
+    transactionType,
+    transactionName,
+    traces: rawTraces
+  }
 };
 
-const apmParser = async ({ dir, param, client }: CLIParams) => {
+const apmParser = async ({ param, client }: CLIParams) => {
   const api = new ApmClient(client);
+  console.log(`Querying APM with condition (${param.kuery}) starting from ${param.start} and ending at ${param.end}`);
 
-  const traces = await api.getTraces(param);
+  const transactionGroupMainStatistics = await Promise.all(param.transactionType.map(transactionType => api.getTransactionGroupMainStatistics(transactionType === 'http-request' ? 'kibana-frontend' : 'kibana', {
+    latencyAggregationType: 'avg',
+    transactionType,
+    ..._.pick(param, ['start', 'end', 'kuery', 'environment'])
+  })))
 
-  const traceItems = await Promise.all(traces.map((t) => enrichTrace(t, api, param)));
+  const response = await bluebird.mapSeries(transactionGroupMainStatistics.flat(), i => {
+    const service = i.transactionType === 'http-request' ? 'kibana-frontend' : 'kibana'
+    return enrichTrace(i.name, i.transactionType, service, api, param)
+  });
 
-  await writeFile(`${dir}/traces-${param.kuery}.json`, JSON.stringify(traceItems));
+  const output = {
+    journeyName: "Sample Journey Name",
+    journeyTime: 300000,
+    kibanaVersion: "v7.17.1",
+    kibanaUrl: "https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io/",
+    maxUsersCount: 1,
+    traceItems: response,
+  }
+
+  await writeFile(`trace.json`, JSON.stringify(output));
 };
+
+// enrichTrace(
+//   'POST /internal/bsearch',
+//   'request',
+//   'kibana',
+//   new ApmClient({ auth: { username: "apm-parser-performance", password: "performance2022", }, baseURL: 'https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io' }),
+//   {
+//     start: '2022-03-29T00:01:00.000Z',
+//     end: '2022-03-29T23:59:00.000Z',
+//     kuery: "labels.testJobId:local-9bb12252-f167-45c4-8a34-8158fa4bc8d5",
+//     environment: Environment.ENVIRONMENT_ALL
+//   }
+// ).then().catch(console.error)
 
 export default apmParser;
