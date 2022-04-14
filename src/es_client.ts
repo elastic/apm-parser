@@ -18,7 +18,7 @@ export function initClient(options: clientOptions) {
     });
 
     return {
-        getTransactions: async function(jobId: string){
+        getTransactions: async function(jobId: string, startTime: string){
             const result = await client.search(
                 {
                 "body": {
@@ -86,8 +86,7 @@ export function initClient(options: clientOptions) {
                             "range": {
                               "@timestamp": {
                                 "format": "strict_date_optional_time",
-                                "gte": "2022-04-13T11:31:18.192Z", // startTime
-                                // "lte": "2022-04-13T12:31:18.192Z"
+                                "gte": startTime, // "2022-04-13T11:31:18.192Z"
                               }
                             }
                           }

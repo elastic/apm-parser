@@ -30,7 +30,7 @@ const apmParser = async ({ param, client }: CLIParams) => {
     password: client.auth.password,
   }
   const esClient = initClient(authOptions);
-  const hits = await esClient.getTransactions(param.jobId);
+  const hits = await esClient.getTransactions(param.jobId, param.start);
   if (!hits && hits.length === 0) {
     throw new Error('No transactions found')
   }
