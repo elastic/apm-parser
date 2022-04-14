@@ -49,6 +49,13 @@ const argv = yargs(hideBin(process.argv))
       default: '',
       type: 'string',
     },
+    j: {
+      alias: 'jobId',
+      demandOption: false,
+      describe: 'Journey Job Id',
+      default: '',
+      type: 'string',
+    },
     n: {
       alias: 'env',
       demandOption: false,
@@ -83,7 +90,7 @@ const argv = yargs(hideBin(process.argv))
 apmParser({
   dir: argv.d,
   type: argv.t,
-  param: { start: argv.s, end: argv.e, kuery: argv.k, environment: argv.n, transactionType: argv.tt },
+  param: { start: argv.s, end: argv.e, kuery: argv.k, jobId: argv.j, environment: argv.n, transactionType: argv.tt },
   client: { auth: { username: argv.u, password: argv.p }, baseURL: argv.c },
 })
   .then(() => console.log('Apm parser finished successfully'))
