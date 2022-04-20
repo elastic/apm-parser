@@ -3,6 +3,7 @@
 /lib/
 /dist/
 /docs/
+/output/
 .idea/*
 
 .DS_Store

@@ -1,11 +1,8 @@
 // @ts-nocheck
-import { writeFile } from 'fs/promises';
-import bluebird from 'bluebird';
-import { Events } from './types';
-import tree from './tree';
-import { ApmClient, Environment } from './ApmClient';
-import _ from 'lodash';
-import * as sanitize from "./sanitize";
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
+import { initClient } from './es_client';
+import path from 'path';
 
 type CLIParams = {
   dir: string;
@@ -13,8 +10,8 @@ type CLIParams = {
   param: {
     start: string;
     end: string;
-    environment: Environment;
-    kuery: string;
+    journeyName: string;
+    jobId: string;
     transactionType: string[];
   };
   client: {
@@ -26,58 +23,60 @@ type CLIParams = {
   };
 };
 
-const enrichTrace = async (transactionName: string, transactionType: string, service: string, api: ApmClient, params: Omit<CLIParams['param'], 'transactionType'>) => {
-  const traceSamples = await api.getTraceSamples({
-    ...params,
-    transactionName,
-    transactionType,
-    service,
-  });
-
-  const uniqueTraceSamples = _.uniqBy(traceSamples, 'traceId')
-
-  const traces = await bluebird.map<_, Events[]>(uniqueTraceSamples, ({ traceId }) => api.getTrace({
-    id: traceId,
-    start: params.start,
-    end: params.end
-  }), { concurrency: 10 });
-
-
-  const rawTraces = traces.map(events => tree(events.map(sanitize.scalability))).filter(e => !_.isEmpty(e))
-
-  return {
-    service,
-    transactionType,
-    transactionName,
-    traces: rawTraces
-  }
-};
-
 const apmParser = async ({ param, client }: CLIParams) => {
-  const api = new ApmClient(client);
-  console.log(`Querying APM with condition (${param.kuery}) starting from ${param.start} and ending at ${param.end}`);
+  const authOptions = {
+    node: client.baseURL,
+    username: client.auth.username,
+    password: client.auth.password,
+  }
+  const esClient = initClient(authOptions);
+  const hits = await esClient.getTransactions(param.jobId, param.journeyName, param.start);
+  if (!hits && hits.length === 0) {
+    throw new Error('No transactions found')
+  }
 
-  const transactionGroupMainStatistics = await Promise.all(param.transactionType.map(transactionType => api.getTransactionGroupMainStatistics(transactionType === 'http-request' ? 'kibana-frontend' : 'kibana', {
-    latencyAggregationType: 'avg',
-    transactionType,
-    ..._.pick(param, ['start', 'end', 'kuery', 'environment'])
-  })))
+  const source = hits[0]._source;
+  const journeyName = source.labels.journeyName || 'Unknown Journey';
+  const kibanaVersion = source.service.version;
+  const maxUsersCount = source.labels.maxUsersCount || '0';
 
-  const response = await bluebird.mapSeries(transactionGroupMainStatistics.flat(), i => {
-    const service = i.transactionType === 'http-request' ? 'kibana-frontend' : 'kibana'
-    return enrichTrace(i.name, i.transactionType, service, api, param)
+  const data = hits.map(hit => hit._source).map(hit => {
+    return  {
+      processor: hit.processor,
+      traceId : hit.trace.id,
+      timestamp: hit["@timestamp"],
+      environment: hit.environment,
+      request: {
+        url: { path: hit.url.path },
+        headers: hit.http.request.headers,
+        method: hit.http.request.method,
+        body: hit.http.request.body ? JSON.parse(hit.http.request.body.original) : '',
+      },
+      response: {statusCode: hit.http.response.status_code},
+      transaction: {
+        id: hit.transaction.id,
+        name: hit.transaction.name,
+        type: hit.transaction.type,
+      }
+    }
   });
+
+  console.log(`Found ${hits.length} hits`);
 
   const output = {
-    journeyName: "Sample Journey Name",
-    journeyTime: 300000,
-    kibanaVersion: "v7.17.1",
-    kibanaUrl: "https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io/",
-    maxUsersCount: 1,
-    traceItems: response,
+    journeyName,
+    kibanaVersion,
+    maxUsersCount,
+    traceItems: data,
   }
 
-  await writeFile(`trace.json`, JSON.stringify(output));
+  const outputDir = path.resolve('output');
+  const fileName = `${output.journeyName.replace(/ /g,'')}-${param.jobId}.json`
+  const filePath = path.resolve(outputDir, fileName);
+  if (!existsSync(outputDir)) {
+    await fs.mkdir(outputDir);
+  }
+  await fs.writeFile(filePath, JSON.stringify(output, null, 2), 'utf8');
 };
 
 // enrichTrace(

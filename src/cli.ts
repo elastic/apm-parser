@@ -3,7 +3,6 @@ import apmParser from './index';
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers"
-import { Environment } from './ApmClient'
 
 const argv = yargs(hideBin(process.argv))
   .scriptName('apm-parser')
@@ -42,18 +41,18 @@ const argv = yargs(hideBin(process.argv))
       default: new Date().toISOString(),
       type: 'string',
     },
-    k: {
-      alias: 'kuery',
-      demandOption: false,
-      describe: 'Kibana Query Language (KQL)',
+    j: {
+      alias: 'jobId',
+      demandOption: true,
+      describe: 'Journey Job Id',
       default: '',
       type: 'string',
     },
     n: {
-      alias: 'env',
-      demandOption: false,
-      describe: 'Environment',
-      default: Environment.ENVIRONMENT_ALL,
+      alias: 'journeyName',
+      demandOption: true,
+      describe: 'Journey Name',
+      default: '',
       type: 'string',
     },
     tt: {
@@ -83,7 +82,7 @@ const argv = yargs(hideBin(process.argv))
 apmParser({
   dir: argv.d,
   type: argv.t,
-  param: { start: argv.s, end: argv.e, kuery: argv.k, environment: argv.n, transactionType: argv.tt },
+  param: { start: argv.s, end: argv.e, journeyName: argv.n, jobId: argv.j, transactionType: argv.tt },
   client: { auth: { username: argv.u, password: argv.p }, baseURL: argv.c },
 })
   .then(() => console.log('Apm parser finished successfully'))
