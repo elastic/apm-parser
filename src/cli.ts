@@ -3,7 +3,6 @@ import apmParser from './index';
 
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers"
-import { Environment } from './ApmClient'
 
 const argv = yargs(hideBin(process.argv))
   .scriptName('apm-parser')
@@ -54,13 +53,6 @@ const argv = yargs(hideBin(process.argv))
       demandOption: false,
       describe: 'Journey Job Id',
       default: '',
-      type: 'string',
-    },
-    n: {
-      alias: 'env',
-      demandOption: false,
-      describe: 'Environment',
-      default: Environment.ENVIRONMENT_ALL,
       type: 'string',
     },
     tt: {

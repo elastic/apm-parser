@@ -1,7 +1,9 @@
 // @ts-nocheck
-import { writeFile } from 'fs/promises';
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { Environment } from './ApmClient';
-import { initClient } from './es_client'
+import { initClient } from './es_client';
+import path from 'path';
 
 type CLIParams = {
   dir: string;
@@ -34,10 +36,15 @@ const apmParser = async ({ param, client }: CLIParams) => {
   if (!hits && hits.length === 0) {
     throw new Error('No transactions found')
   }
+
+  const source = hits[0]._source;
+  const journeyName = source.labels.journeyName || 'Unknown Journey';
+  const kibanaVersion = source.service.version;
+  const maxUsersCount = source.labels.maxUsersCount || '0';
+
   const data = hits.map(hit => hit._source).map(hit => {
     return  {
       processor: hit.processor,
-      labels: hit.labels,
       traceId : hit.trace.id,
       timestamp: hit["@timestamp"],
       environment: hit.environment,
@@ -59,15 +66,18 @@ const apmParser = async ({ param, client }: CLIParams) => {
   console.log(`Found ${hits.length} hits`);
 
   const output = {
-    journeyName: "Sample Journey Name",
-    journeyTime: 300000,
-    kibanaVersion: "v7.17.1",
-    kibanaUrl: "https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io/",
-    maxUsersCount: 1,
+    journeyName,
+    kibanaVersion,
+    maxUsersCount,
     traceItems: data,
   }
 
-  await writeFile(`trace.json`, JSON.stringify(output, null, 2), 'utf8');
+  const outputDir = path.resolve('output');
+  const filePath = path.resolve(outputDir, `${output.journeyName.replace(/ /g,'')}.json`);
+  if (!existsSync(outputDir)) {
+    await fs.mkdir(outputDir);
+  }
+  await fs.writeFile(filePath, JSON.stringify(output, null, 2), 'utf8');
 };
 
 // enrichTrace(
