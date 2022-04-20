@@ -17,7 +17,7 @@ export function initClient(options: clientOptions) {
 });
 
     return {
-      getTransactions: async function(jobId: string, startTime: string){
+      getTransactions: async function(jobId: string, journeyName: string, startTime: string){
         const result = await client.search({
           "body": {
             "track_total_hits": true,
@@ -71,6 +71,18 @@ export function initClient(options: clientOptions) {
                               {
                                 "match_phrase": {
                                   "labels.testJobId": jobId
+                                }
+                              }
+                            ],
+                            "minimum_should_match": 1
+                          }
+                        },
+                        {
+                          "bool": {
+                            "should": [
+                              {
+                                "match_phrase": {
+                                  "labels.journeyName": journeyName
                                 }
                               }
                             ],

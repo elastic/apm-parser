@@ -1,7 +1,6 @@
 // @ts-nocheck
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { Environment } from './ApmClient';
 import { initClient } from './es_client';
 import path from 'path';
 
@@ -11,8 +10,7 @@ type CLIParams = {
   param: {
     start: string;
     end: string;
-    environment: Environment;
-    kuery: string;
+    journeyName: string;
     jobId: string;
     transactionType: string[];
   };
@@ -32,7 +30,7 @@ const apmParser = async ({ param, client }: CLIParams) => {
     password: client.auth.password,
   }
   const esClient = initClient(authOptions);
-  const hits = await esClient.getTransactions(param.jobId, param.start);
+  const hits = await esClient.getTransactions(param.jobId, param.journeyName, param.start);
   if (!hits && hits.length === 0) {
     throw new Error('No transactions found')
   }
@@ -73,7 +71,8 @@ const apmParser = async ({ param, client }: CLIParams) => {
   }
 
   const outputDir = path.resolve('output');
-  const filePath = path.resolve(outputDir, `${output.journeyName.replace(/ /g,'')}.json`);
+  const fileName = `${output.journeyName.replace(/ /g,'')}-${param.jobId}.json`
+  const filePath = path.resolve(outputDir, fileName);
   if (!existsSync(outputDir)) {
     await fs.mkdir(outputDir);
   }
