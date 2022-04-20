@@ -1,11 +1,12 @@
 {
-  "name": "apm-parser",
-  "version": "0.0.0",
+  "name": "@elastic/apm-parser",
+  "version": "0.0.1",
+  "description": "A library to convert APM traces into JSON format for performance testing.",
   "author": "Cavit Baturalp Gurdin <baturalp.gurdin@elastic.co>",
   "repository": "https://github.com/elastic/apm-parser",
   "license": "MIT",
-  "main": "./dist/tsc/index.js",
-  "types": "./dist/tsc/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "my-cli-tool": "./dist/esbuild/cli.js"
   },
@@ -51,5 +52,8 @@
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.35",
     "typescript": "^4.2.3"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }
