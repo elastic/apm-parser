@@ -11,7 +11,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "my-cli-tool": "dist/esbuild/cli.js"
+    "performance-testing-dataset-extractor": "dist/esbuild/cli.js"
   },
   "scripts": {
     "main": "ts-node src/index.ts",
