@@ -1,5 +1,5 @@
 {
-  "name": "@elastic/apm-parser",
+  "name": "@elastic/performance-testing-dataset-extractor",
   "version": "0.0.1",
   "description": "A library to convert APM traces into JSON format for performance testing.",
   "author": "Cavit Baturalp Gurdin <baturalp.gurdin@elastic.co>",
@@ -55,5 +55,8 @@
   },
   "engines": {
     "node": ">=16"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
