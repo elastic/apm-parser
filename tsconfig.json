@@ -24,6 +24,7 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
+    "declaration": true,
     "sourceMap": true,
     "types": [
       "node",

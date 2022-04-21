@@ -1,4 +1,3 @@
-// @ts-nocheck
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { initClient } from './es_client';
@@ -78,18 +77,5 @@ const apmParser = async ({ param, client }: CLIParams) => {
   }
   await fs.writeFile(filePath, JSON.stringify(output, null, 2), 'utf8');
 };
-
-// enrichTrace(
-//   'POST /internal/bsearch',
-//   'request',
-//   'kibana',
-//   new ApmClient({ auth: { username: "apm-parser-performance", password: "performance2022", }, baseURL: 'https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io' }),
-//   {
-//     start: '2022-03-29T00:01:00.000Z',
-//     end: '2022-03-29T23:59:00.000Z',
-//     kuery: "labels.testJobId:local-9bb12252-f167-45c4-8a34-8158fa4bc8d5",
-//     environment: Environment.ENVIRONMENT_ALL
-//   }
-// ).then().catch(console.error)
 
 export default apmParser;
