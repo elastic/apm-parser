@@ -7,10 +7,8 @@ type CLIParams = {
   dir: string;
   type: string;
   param: {
-    start: string;
-    end: string;
     journeyName: string;
-    jobId: string;
+    buildId: string;
     transactionType: string[];
   };
   client: {
@@ -29,8 +27,8 @@ const apmParser = async ({ param, client }: CLIParams) => {
     password: client.auth.password,
   }
   const esClient = initClient(authOptions);
-  const hits = await esClient.getTransactions(param.jobId, param.journeyName, param.start);
-  if (!hits && hits.length === 0) {
+  const hits = await esClient.getTransactions(param.buildId, param.journeyName);
+  if (!hits || hits.length === 0) {
     throw new Error('No transactions found')
   }
 
@@ -70,7 +68,7 @@ const apmParser = async ({ param, client }: CLIParams) => {
   }
 
   const outputDir = path.resolve('output');
-  const fileName = `${output.journeyName.replace(/ /g,'')}-${param.jobId}.json`
+  const fileName = `${output.journeyName.replace(/ /g,'')}-${param.buildId}.json`
   const filePath = path.resolve(outputDir, fileName);
   if (!existsSync(outputDir)) {
     await fs.mkdir(outputDir);
