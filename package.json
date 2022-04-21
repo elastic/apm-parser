@@ -3,12 +3,15 @@
   "version": "0.0.1",
   "description": "A library to convert APM traces into JSON format for performance testing.",
   "author": "Cavit Baturalp Gurdin <baturalp.gurdin@elastic.co>",
-  "repository": "https://github.com/elastic/apm-parser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elastic/apm-parser.git"
+  },
   "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "my-cli-tool": "./dist/esbuild/cli.js"
+    "my-cli-tool": "dist/esbuild/cli.js"
   },
   "scripts": {
     "main": "ts-node src/index.ts",
@@ -58,5 +61,13 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/elastic/apm-parser/issues"
+  },
+  "homepage": "https://github.com/elastic/apm-parser#readme",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  }
 }
