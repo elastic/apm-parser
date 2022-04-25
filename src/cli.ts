@@ -5,9 +5,8 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers"
 
 const argv = yargs(hideBin(process.argv))
-  .scriptName('apm-parser')
-  .usage('Usage: $0 [options]')
-  .example("$0 -s '2022-03-29T01:20:00.000Z'", 'extract apm data starting from date specified')
+  .scriptName('performance-testing-dataset-extractor')
+  .usage('Usage: yarn cli -u <username> -p <password> -c <es_host> -b <testBuildId> -n <journeyName>')
   .options({
     u: {
       alias: 'user',
@@ -21,30 +20,17 @@ const argv = yargs(hideBin(process.argv))
       describe: 'Password',
       type: 'string',
     },
-    s: {
-      alias: 'start',
-      demandOption: true,
-      describe: 'Start Date',
-      type: 'string',
-    },
     c: {
       alias: 'cluster',
       demandOption: false,
-      describe: 'APM Cluster',
-      default: 'https://kibana-ops-e2e-perf.kb.us-central1.gcp.cloud.es.io',
+      describe: 'ES Cluster',
+      default: 'https://kibana-ops-e2e-perf.es.us-central1.gcp.cloud.es.io:9243',
       type: 'string',
     },
-    e: {
-      alias: 'end',
-      demandOption: false,
-      describe: 'End Date',
-      default: new Date().toISOString(),
-      type: 'string',
-    },
-    j: {
-      alias: 'jobId',
+    b: {
+      alias: 'buildId',
       demandOption: true,
-      describe: 'Journey Job Id',
+      describe: 'Journey Build Id',
       default: '',
       type: 'string',
     },
@@ -82,8 +68,8 @@ const argv = yargs(hideBin(process.argv))
 apmParser({
   dir: argv.d,
   type: argv.t,
-  param: { start: argv.s, end: argv.e, journeyName: argv.n, jobId: argv.j, transactionType: argv.tt },
+  param: { journeyName: argv.n, buildId: argv.b, transactionType: argv.tt },
   client: { auth: { username: argv.u, password: argv.p }, baseURL: argv.c },
 })
-  .then(() => console.log('Apm parser finished successfully'))
-  .catch((e) => console.error('Apm parser failed\n', e));
+  .then(() => console.log('Dataset extractor finished successfully'))
+  .catch((e) => console.error('Dataset extractor failed\n', e));
