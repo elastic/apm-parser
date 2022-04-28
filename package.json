@@ -1,6 +1,6 @@
 {
   "name": "@elastic/performance-testing-dataset-extractor",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A library to convert APM traces into JSON format for performance testing.",
   "author": "Cavit Baturalp Gurdin <baturalp.gurdin@elastic.co>",
   "repository": {
