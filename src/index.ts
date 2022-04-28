@@ -29,7 +29,8 @@ const apmParser = async ({ param, client }: CLIParams) => {
   const esClient = initClient(authOptions);
   const hits = await esClient.getTransactions(param.buildId, param.journeyName);
   if (!hits || hits.length === 0) {
-    throw new Error('No transactions found')
+    console.warn(`No transactions found with 'labels.testBuildId=${param.buildId}' and 'labels.journeyName=${param.journeyName}'\n Output file won't be generated`);
+    return;
   }
 
   const source = hits[0]._source;
@@ -58,8 +59,6 @@ const apmParser = async ({ param, client }: CLIParams) => {
     }
   });
 
-  console.log(`Found ${hits.length} hits`);
-
   const output = {
     journeyName,
     kibanaVersion,
@@ -70,6 +69,8 @@ const apmParser = async ({ param, client }: CLIParams) => {
   const outputDir = path.resolve('output');
   const fileName = `${output.journeyName.replace(/ /g,'')}-${param.buildId}.json`
   const filePath = path.resolve(outputDir, fileName);
+
+  console.log(`Found ${hits.length} transactions, output file: ${filePath}`);
   if (!existsSync(outputDir)) {
     await fs.mkdir(outputDir);
   }

@@ -1,8 +1,11 @@
 # APM PARSER
 
+## Pre-conditions
+Makes sure to set `testBuildId` and `journeyName` as APM global labels, it is needed to match appropriate transactions.
+
 ## Cli usage
 ```typescript
-yarn cli -u <username> -p <password> -c "https://apm-7-17.es.us-central1.gcp.cloud.es.io:9243" -s 2022-04-12T00:01:00.000Z -j local-90a41a83-90da-487b-a6be-4713a9ad18d8 -n 'My cool journey'
+ yarn cli -u <username> -p <password> -c "https://apm-7-17.es.us-central1.gcp.cloud.es.io:9243" -b "local-90a41a83-90da-487b-a6be-4713a9ad18d8" -n "My cool journey"
 ```
 
 
@@ -10,8 +13,8 @@ yarn cli -u <username> -p <password> -c "https://apm-7-17.es.us-central1.gcp.clo
 
 ```typescript
 apmParser({
-    start: '2022-04-12T00:01:00.000Z',
-    jobId: 'local-90a41a83-90da-487b-a6be-4713a9ad18d8',
+  param: { journeyName: 'My cool journey', buildId: 'local-90a41a83-90da-487b-a6be-4713a9ad18d8'},
+  client: { auth: { username: '<username>', password: '<password>' }, baseURL: '<esCLusterUrl>' },
 })
     .then(console.info)
     .catch(console.error);
